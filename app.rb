@@ -1,10 +1,14 @@
 require 'sinatra/base'
 require_relative './lib/bookmark'
 require './database_connection_setup'
+require 'uri'
+require 'sinatra/flash'
+
 
 class BookmarkManager < Sinatra::Base
 
   enable :sessions, :method_override
+  register Sinatra::Flash
 
   get '/' do
     @bookmarks = Bookmark.all
@@ -17,7 +21,7 @@ class BookmarkManager < Sinatra::Base
   end
 
   post '/bookmarks' do
-    Bookmark.create(url: params[:url], title: params[:title])
+    flash[:notice] = "You must submit a valid URL." unless Bookmark.create(url: params[:url], title: params[:title])
     redirect '/bookmarks'
   end
 
@@ -40,6 +44,16 @@ class BookmarkManager < Sinatra::Base
     redirect('/bookmarks')
   end
 
+  get '/bookmarks/:id/comments/new' do
+    @bookmark_id = params[:id]
+    erb :'comments/new'
+  end
+
+  post '/bookmarks/:id/comments' do
+    Comment.create(text: params[:comment], bookmark_id: params[:id])
+    # DatabaseConnection.query("INSERT INTO comments (text, bookmark_id) VALUES('#{params[:comment]}', '#{params[:id]}');")
+    redirect '/bookmarks'
+  end
 
   run! if app_file == $0
 end

@@ -25,9 +25,13 @@ describe Bookmark do
   describe '.create' do
     it 'creates a new bookmark' do
       bookmark = Bookmark.create(url: 'http://www.testbookmark.com', title: 'test bookmark')
-      persisted_data = persisted_data(id: bookmark.id)
-      expect(bookmark.id).to eq persisted_data['id']
+      persisted_data = persisted_data(table: 'bookmarks', id: bookmark.id)
+      expect(bookmark.id).to eq persisted_data.first['bookmark_id']
       expect(bookmark.title).to eq 'test bookmark'
+    end
+    it 'does not create a new bookmark if the URL is not valid' do
+      Bookmark.create(url: 'not a real bookmark', title: 'not a real bookmark')
+      expect(Bookmark.all).not_to include 'not a real bookmark'
     end
   end
 
@@ -63,6 +67,17 @@ end
       expect(result.id).to eq bookmark.id
       expect(result.title).to eq 'Makers Academy'
       expect(result.url).to eq 'http://www.makersacademy.com'
+    end
+  end
+
+  describe '#comments' do
+    it 'returns a list of comments on the bookmark' do
+      bookmark = Bookmark.create(title: 'Makers Academy', url: 'http://www.makersacademy.com')
+      DatabaseConnection.query("INSERT INTO comments (id, text, bookmark_id) VALUES(1, 'Test comment', #{bookmark.id})")
+
+      comment = bookmark.comments.first
+
+      expect(comment['text']).to eq 'Test comment'
     end
   end
 
